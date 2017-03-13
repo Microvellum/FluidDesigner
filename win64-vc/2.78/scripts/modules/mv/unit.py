@@ -1,7 +1,5 @@
 '''
-Created on Jul 25, 2016
 Common Unit Conversion Functions
-@author: Andrew
 '''
 import bpy
 from decimal import *
@@ -15,6 +13,11 @@ def millimeter(millimeter):
     """ Converts millimeter to meter
     """
     return millimeter * .001 #METERS
+
+def meter_to_feet(meter):
+    """ Converts meter to feet
+    """
+    return round(meter * 3.28084,4)
 
 def meter_to_inch(meter):
     """ Converts meter to inch
@@ -43,3 +46,6 @@ def decimal_inch_to_millimeter(inch):
     """ Converts inch to millimeter returned as a decimal object
     """
     return Decimal(str(inch)) * Decimal(str(25.4))
+
+def draw_dollar_price(value):
+    return  "$" + str(round(value,2))

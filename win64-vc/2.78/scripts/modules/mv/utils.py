@@ -1,7 +1,5 @@
 '''
-Created on Jul 25, 2016
-
-@author: Andrew
+Utility Functions
 '''
 
 import bpy
@@ -56,6 +54,12 @@ def create_floor_mesh(name,size):
             ]
 
     return create_object_from_verts_and_faces(verts,faces,name)
+
+def create_single_vertex(name):
+    
+    verts = [(0, 0, 0)]
+    
+    return create_object_from_verts_and_faces(verts,[],name)
 
 def create_object_from_verts_and_faces(verts,faces,name):
     """ Creates an object from Verties and Faces
@@ -246,6 +250,8 @@ def assign_materials_from_pointers(obj):
         material = get_material((slot.library_name,slot.category_name),slot.item_name)
         if material:
             obj.material_slots[index].material = material
+        else:
+            print("MATERIAL NOT FOUND",slot.library_name,slot.category_name,slot.item_name,obj.mv.name_object)
 
     #MAKE SURE OBJECT IS TEXTURED
     if obj.mv.type == 'CAGE':
@@ -488,6 +494,12 @@ def get_library_dir(lib_type = ""):
 def get_material(folders,material_name):
     if material_name in bpy.data.materials:
         return bpy.data.materials[material_name]
+    
+    #Make sure no folders are blank
+    for folder in folders:
+        if folder == "":
+            return None
+    
     search_directory = get_library_dir("materials")
     for folder in folders:
         search_directory = os.path.join(search_directory,folder)
@@ -527,7 +539,7 @@ def get_library_scripts_dir(context):
 
     return paths
 
-def get_library_packages(context):
+def get_library_packages(context, only_external=False):
     """ Returns: List (of Strings) 
     Adds FD Library Packages to PYTHON Path, and Returns list of package folder names.
     """    
@@ -547,18 +559,19 @@ def get_library_packages(context):
                     packages.append(folder_name)
                     break
                         
-    #LOAD LIBRARIES FROM MODULE PATH                        
-    for path in paths:
-        dirs = os.listdir(path)
-        for folder in dirs:
-            if os.path.isdir(os.path.join(path,folder)) and not folder.startswith("X_"):
-                files = os.listdir(os.path.join(path,folder))
-                for file in files:
-                    if file == '__init__.py':
-                        sys.path.append(path)
-                        mod = __import__(folder)
-                        packages.append(folder)
-                        break
+    #LOAD LIBRARIES FROM MODULE PATH
+    if not only_external:                      
+        for path in paths:
+            dirs = os.listdir(path)
+            for folder in dirs:
+                if os.path.isdir(os.path.join(path,folder)) and not folder.startswith("X_"):
+                    files = os.listdir(os.path.join(path,folder))
+                    for file in files:
+                        if file == '__init__.py':
+                            sys.path.append(path)
+                            mod = __import__(folder)
+                            packages.append(folder)
+                            break
 
     return packages
 
@@ -581,7 +594,7 @@ def get_product_class(context,library_name,category_name,product_name):
     
     for modname, modobj in inspect.getmembers(pkg):
         for name, obj in inspect.getmembers(modobj):
-            if "PRODUCT_" in name:
+            if "PRODUCT_" in name and inspect.isclass(obj):
                 product = obj()
                 if product.assembly_name == "":
                     product.assembly_name = get_product_class_name(name)
@@ -599,7 +612,7 @@ def get_insert_class(context,library_name,category_name,insert_name):
     
     for modname, modobj in inspect.getmembers(pkg):
         for name, obj in inspect.getmembers(modobj):
-            if "INSERT_" in name:
+            if "INSERT_" in name and inspect.isclass(obj):
                 insert = obj()
                 if insert.library_name == library_name and insert.category_name == category_name and insert.assembly_name == insert_name:
                     insert.package_name = lib.package_name
@@ -688,6 +701,21 @@ def calc_distance(point1,point2):
     """ This gets the distance between two points (X,Y,Z)
     """
     return math.sqrt((point1[0]-point2[0])**2 + (point1[1]-point2[1])**2 + (point1[2]-point2[2])**2) 
+
+def get_curve_length(obj_curve):
+    """ This gets a curve objects length. This currently only 
+        calculates straight segments.
+    """
+    length = 0
+    
+    if obj_curve.type == 'CURVE':
+        
+        for spline in obj_curve.data.splines:
+            for index, point in enumerate(spline.bezier_points):
+                if len(spline.bezier_points) > index + 1:
+                    length += calc_distance(point.co, spline.bezier_points[index+1].co)
+                    
+    return length
 
 #-------ENUM FUNCTIONS
 
@@ -1958,7 +1986,7 @@ def render_opengl(self, context):
     img = get_render_image(ren_path)
     
     if img is None:
-        self.report({'ERROR'}, "Invalid render path")
+        self.report({'ERROR'}, "Invalid render path:" + ren_path)
         return False
 
     tile_x = 240

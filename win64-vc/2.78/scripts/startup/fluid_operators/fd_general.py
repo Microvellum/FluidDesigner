@@ -423,20 +423,21 @@ class OPS_drop_insert(Operator):
     def show_openings(self):
         insert_type = self.insert.obj_bp.mv.placement_type
         for obj in  bpy.context.scene.objects:
-            opening = None
-            if obj.mv.type_group == 'OPENING':
-                if insert_type in {'INTERIOR','SPLITTER'}:
-                    opening = fd_types.Assembly(obj) if obj.mv.interior_open else None
-                if insert_type == 'EXTERIOR':
-                    opening = fd_types.Assembly(obj) if obj.mv.exterior_open else None
-                if opening:
-                    cage = opening.get_cage()
-                    opening.obj_x.hide = True
-                    opening.obj_y.hide = True
-                    opening.obj_z.hide = True
-                    cage.hide_select = False
-                    cage.hide = False
-                    self.objects.append(cage)
+            if obj.layers[0]: #Make sure wall is not hidden
+                opening = None
+                if obj.mv.type_group == 'OPENING':
+                    if insert_type in {'INTERIOR','SPLITTER'}:
+                        opening = fd_types.Assembly(obj) if obj.mv.interior_open else None
+                    if insert_type == 'EXTERIOR':
+                        opening = fd_types.Assembly(obj) if obj.mv.exterior_open else None
+                    if opening:
+                        cage = opening.get_cage()
+                        opening.obj_x.hide = True
+                        opening.obj_y.hide = True
+                        opening.obj_z.hide = True
+                        cage.hide_select = False
+                        cage.hide = False
+                        self.objects.append(cage)
 
     def selected_opening(self,selected_obj):
         if selected_obj:
@@ -1340,6 +1341,8 @@ class OPS_load_library_modules(Operator):
     bl_label = "Load Library Modules"
     bl_description = "This will load the available product library modules"
     bl_options = {'UNDO'}
+    
+    external_lib_only = bpy.props.BoolProperty(name="External Libraries Only", default=False)
 
     def get_library(self,libraries,library_name,module_name,package_name,path):
         if library_name in libraries:
@@ -1362,7 +1365,7 @@ class OPS_load_library_modules(Operator):
         for library in wm.lib_inserts:
             wm.lib_inserts.remove(0)        
         
-        packages = utils.get_library_packages(context)
+        packages = utils.get_library_packages(context, only_external=True if self.external_lib_only else False)
         
         for package in packages:
             pkg = import_module(package)

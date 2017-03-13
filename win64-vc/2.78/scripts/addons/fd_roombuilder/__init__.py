@@ -459,6 +459,10 @@ class OPERATOR_Add_Obstacle(Operator):
         
     def set_draw_type(self,context,draw_type='WIRE'):
         for obj in context.scene.objects:
+            if obj.mv.product_type == 'Obstacle':
+                continue
+            if obj.mv.type == 'CAGE':
+                continue            
             if obj.parent:
                 if obj.parent.name == self.wall.obj_bp.name:
                     pass
@@ -553,6 +557,7 @@ class OPERATOR_Add_Obstacle(Operator):
                 
         if self.obstacle:
             for child in self.obstacle.obj_bp.children:
+                child.mv.product_type = 'Obstacle'
                 child.draw_type = 'WIRE'
                 
 #         self.obstacle = None

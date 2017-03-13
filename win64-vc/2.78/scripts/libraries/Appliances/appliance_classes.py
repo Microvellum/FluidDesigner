@@ -51,7 +51,7 @@ class Parametric_Wall_Appliance(fd_types.Assembly):
             Countertop_Overhang_Right = self.get_var('Countertop Overhang Right')
             Countertop_Overhang_Back = self.get_var('Countertop Overhang Back')
  
-            ctop = cabinet_countertops.PRODUCT_Straight_Countertop()
+            ctop = cabinet_countertops.Straight_Countertop()
             ctop.draw()
             ctop.obj_bp.mv.type_group = 'INSERT'
             ctop.obj_bp.parent = self.obj_bp

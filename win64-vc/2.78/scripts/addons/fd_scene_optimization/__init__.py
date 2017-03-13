@@ -78,26 +78,35 @@ class OPERATOR_Clear_All_Drivers(bpy.types.Operator):
     
     def execute(self,context):
         
-        delete_objs = []
+#         delete_objs = []
         
         for obj in context.scene.objects:
-            if obj.animation_data:
-                for driver in obj.animation_data.drivers:
-                    obj.driver_remove(driver.data_path)
-            obj.select = True
-            context.scene.objects.active = obj
-
-            for mod in obj.modifiers:
-                bpy.ops.object.modifier_apply(apply_as='DATA',modifier=mod.name)
-
-            obj.lock_location = (False,False,False)
-            obj.lock_scale = (False,False,False)
-            obj.lock_rotation = (False,False,False)
+            if not obj.hide and obj.layers[0]:
+                if obj.animation_data:
+                    for driver in obj.animation_data.drivers:
+                        obj.driver_remove(driver.data_path)
+                obj.select = True
+                context.scene.objects.active = obj
+    
+                if obj.type == 'MESH':
+                    if obj.data.shape_keys:
+                        bpy.ops.fd_object.apply_shape_keys(object_name=obj.name)
+                        
+                if obj.type == 'CURVE':
+                    bpy.ops.object.convert(target='MESH')
+                    
+                for mod in obj.modifiers:
+                    bpy.ops.object.modifier_apply(apply_as='DATA',modifier=mod.name)
+    
+                obj.lock_location = (False,False,False)
+                obj.lock_scale = (False,False,False)
+                obj.lock_rotation = (False,False,False)
             
-            if obj.mv.type in {'CAGE','VPDIMX','VPDIMY','VPDIMZ'}:
-                delete_objs.append(obj)
-                
-        utils.delete_obj_list(delete_objs)
+#             if obj.mv.type in {'CAGE','VPDIMX','VPDIMY','VPDIMZ'}:
+#                 delete_objs.append(obj)
+# 
+#                 
+#         utils.delete_obj_list(delete_objs)
 
         return{'FINISHED'}
 

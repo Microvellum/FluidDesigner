@@ -1969,7 +1969,7 @@ class OPS_export_mvfd(Operator):
             token_name = token.name if token.name != "" else "Unnamed"
             elm_token = self.xml.add_element(elm_tokens,'MachineToken',token_name)
             param_dict = token.create_parameter_dictionary()
-            if token.type_token == 'CORNERNOTCH':
+            if token.type_token in {'CORNERNOTCH','CHAMFER'}:
                 instructions = token.type_token + token.face + " " + token.edge
             elif token.type_token == 'SLIDE':
                 instructions = token.type_token
@@ -1988,7 +1988,7 @@ class OPS_export_mvfd(Operator):
  
     def execute(self, context):
         project_name, ext = os.path.splitext(os.path.basename(bpy.data.filepath))
-         
+        
         self.clear_and_collect_data(context)
         
         # CREATE XML

@@ -8,6 +8,7 @@ Doors, Drawers, Hampers
 import bpy
 from mv import fd_types, unit, utils
 from os import path
+from . import cabinet_properties
 
 ROOT_PATH = path.join(path.dirname(__file__),"Cabinet Components")
 DOOR = path.join(ROOT_PATH,"Part with Edgebanding.blend")
@@ -42,12 +43,16 @@ def add_common_door_prompts(assembly):
     assembly.add_prompt(name="Pull From Floor",prompt_type='DISTANCE',value=unit.inch(40),tab_index=0)
     
 def add_common_pull_prompts(assembly):
-    assembly.add_prompt(name="No Pulls",prompt_type='CHECKBOX',value=False,tab_index=0)
+    props = cabinet_properties.get_scene_props()
+    
+    assembly.add_prompt(name="No Pulls",prompt_type='CHECKBOX',value=props.exterior_defaults.no_pulls,tab_index=0)
     assembly.add_prompt(name="Pull Length",prompt_type='DISTANCE',value=0,tab_index=0)
     
 def add_overlay_prompts(assembly):
+    props = cabinet_properties.get_scene_props()
+    
     assembly.add_prompt(name="Front Thickness",prompt_type='DISTANCE',value=unit.inch(.75),tab_index=0)
-    assembly.add_prompt(name="Inset Front",prompt_type='CHECKBOX',value=False,tab_index=0)
+    assembly.add_prompt(name="Inset Front",prompt_type='CHECKBOX',value=props.exterior_defaults.inset_door,tab_index=0)
     assembly.add_prompt(name="Door to Cabinet Gap",prompt_type='DISTANCE',value=DOOR_TO_CABINET_GAP,tab_index=0)
     assembly.add_prompt(name="Half Overlay Top",prompt_type='CHECKBOX',value=False,tab_index=0)
     assembly.add_prompt(name="Half Overlay Bottom",prompt_type='CHECKBOX',value=False,tab_index=0)
@@ -115,6 +120,7 @@ def add_pull(assembly):
     Pull_From_Bottom = assembly.get_var("Pull From Bottom")
     Pull_From_Floor = assembly.get_var("Pull From Floor")
     World_Z = assembly.get_var('world_loc_z','World_Z',transform_type='LOC_Z')
+    Inset_Front = assembly.get_var("Inset Front")
     
     base_pull_loc = 'Height-Pull_From_Top-Pull_Length/2'
     tall_pull_loc = 'Pull_From_Floor+(Pull_Length/2)-World_Z'
@@ -125,7 +131,7 @@ def add_pull(assembly):
     pull = assembly.add_object(PULL)
     pull.obj.mv.is_cabinet_pull = True
     pull.set_name("Cabinet Pull")
-    pull.y_loc('Door_to_Cabinet_Gap-Front_Thickness',[Door_to_Cabinet_Gap,Front_Thickness])
+    pull.y_loc('IF(Inset_Front,0,-Door_to_Cabinet_Gap-Front_Thickness)',[Inset_Front,Door_to_Cabinet_Gap,Front_Thickness])
     pull.z_loc('IF(PL==0,' + base_pull_loc +',IF(PL==1,' + tall_pull_loc + ',IF(PL==2,' + upper_pull_loc + ',0)))',z_loc_vars)
     pull.x_rot(value = -90)
     pull.y_rot(value = 90)
@@ -138,17 +144,18 @@ def add_door(assembly):
     Front_Thickness = assembly.get_var("Front Thickness")
     Bottom_Overlay = assembly.get_var("Bottom Overlay")
     Door_to_Cabinet_Gap = assembly.get_var("Door to Cabinet Gap")
+    Inset_Front = assembly.get_var("Inset Front")
     
     door = assembly.add_assembly(DOOR)
     door.obj_bp.mv.is_cabinet_door = True
     door.set_name("Cabinet Door")
-    door.y_loc('-Door_to_Cabinet_Gap',[Door_to_Cabinet_Gap])
+    door.y_loc('IF(Inset_Front,Front_Thickness,-Door_to_Cabinet_Gap)',[Inset_Front,Front_Thickness,Door_to_Cabinet_Gap])
     door.z_loc('-Bottom_Overlay',[Bottom_Overlay])
     door.x_rot(value = 0)
     door.y_rot(value = -90)
     door.z_rot(value = 90)
     door.z_dim('Front_Thickness',[Front_Thickness])
-    door.cutpart("Cabinet_Door")
+    door.set_material_pointers("Exposed_Exterior_Surface")  
     door.edgebanding('Cabinet_Door_Edges',l1 = True, w1 = True, l2 = True, w2 = True)
     return door
     

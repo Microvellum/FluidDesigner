@@ -276,7 +276,8 @@ class OPERATOR_genereate_2d_views(bpy.types.Operator):
                         self.ignore_obj_list.append(dim.anchor)
                         self.ignore_obj_list.append(dim.end_point)
                         
-                wall.get_wall_mesh().select = True
+                if wall and wall.get_wall_mesh():
+                    wall.get_wall_mesh().select = True
                 
         camera = self.create_camera(pv_scene)
         camera.rotation_euler.z = math.radians(-90.0)

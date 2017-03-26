@@ -128,7 +128,7 @@ class Window(fd_types.Assembly):
                 divider.z_dim('Height-INCH(13.5)',[Height])   
                 divider.prompt("Array X","Array_X",[Array_X])
                 divider.prompt("Array X Offset","Width+Array_X_Offset",[Array_X_Offset,Width])                                    
-                divider_1.assign_material("Frame",MATERIAL_FILE,"White")
+                divider.assign_material("Frame",MATERIAL_FILE,"White")
 
         
 class PRODUCT_Window_Fixed(Window):

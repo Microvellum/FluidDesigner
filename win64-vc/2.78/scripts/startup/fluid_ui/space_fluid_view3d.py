@@ -1628,8 +1628,8 @@ class VIEW3D_MT_dimensiontools(Menu):
         layout = self.layout
         
         layout.prop(context.window_manager.mv, "use_opengl_dimensions", text="Enable Dimensions")
-        layout.operator("fd_general.toggle_dimension_handles",text="Show Dimension Handels",icon='OUTLINER_OB_EMPTY').turn_on = True
-        layout.operator("fd_general.toggle_dimension_handles",text="Hide Dimension Handels",icon='OUTLINER_OB_EMPTY').turn_on = False
+        layout.operator("fd_general.toggle_dimension_handles",text="Show Dimension Handles",icon='OUTLINER_OB_EMPTY').turn_on = True
+        layout.operator("fd_general.toggle_dimension_handles",text="Hide Dimension Handles",icon='OUTLINER_OB_EMPTY').turn_on = False
         layout.operator("fd_general.add_dimension", text="Add Dimension to Selected Assembly", icon='CURVE_NCURVE')
         layout.operator("fd_general.create_single_dimension", text="Add Single Dimension", icon='ZOOMIN')
         layout.separator()

@@ -673,15 +673,31 @@ class opengl_dim(PropertyGroup):
                                 min=6, 
                                 max=500)
     
-    gl_dim_units = EnumProperty(items=(('1', "Automatic", "Use scene units"),
-                                       ('2', "Meters", ""),
-                                       ('3', "Centimeters", ""),
-                                       ('4', "Milimiters", ""),
-                                       ('5', "Feet", ""),
-                                       ('6', "Inches", "")),
+    gl_dim_units = EnumProperty(items=(('AUTO', "Automatic", "Use scene units"),
+                                       ('METER', "Meters", "Meters"),
+                                       ('CENTIMETER', "Centimeters", "Centimeters"),
+                                       ('MILIMETER', "Millimeters", "Millimeters"),
+                                       ('FEET', "Feet", "Feet"),
+                                       ('INCH', "Inches", "Inches")),
                                 name="Units",
-                                default="6",
-                                description="Units")        
+                                default="INCH",
+                                description="Units")
+    
+    gl_number_format = EnumProperty(items=(('DECIMAL', "Decimal", "Decimal"),
+                                           ('FRACTION', "Fraction", "Fraction")),
+                                    name="Number Format",
+                                    default='DECIMAL',
+                                    description="Number display format")
+    
+    gl_imperial_rd_factor = EnumProperty(items=(('2', "1/2\"", "1/2\""),
+                                                ('4', "1/4\"", "1/4\""),
+                                                ('8', "1/8\"", "1/8\""),
+                                                ('16', "1/16\"", "1/16\""),
+                                                ('32', "1/32\"", "1/32\""),
+                                                ('64', "1/64\"", "1/64\"")),
+                                         name="Imperial Rounding",
+                                         default="16",
+                                         description="Rounding Factor")
         
     gl_precision = IntProperty(name='Precision', 
                                min=0, 

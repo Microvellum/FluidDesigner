@@ -15,6 +15,7 @@ from bpy_extras import view3d_utils, object_utils
 from . import unit
 import bpy_extras.image_utils as img_utils
 import time
+from decimal import *
 
 LIBRARY_PATH_FILENAME = "fd_paths.xml"
 
@@ -614,6 +615,8 @@ def get_insert_class(context,library_name,category_name,insert_name):
         for name, obj in inspect.getmembers(modobj):
             if "INSERT_" in name and inspect.isclass(obj):
                 insert = obj()
+                if insert.assembly_name == "":
+                    insert.assembly_name = get_insert_class_name(name)                
                 if insert.library_name == library_name and insert.category_name == category_name and insert.assembly_name == insert_name:
                     insert.package_name = lib.package_name
                     insert.module_name = modname
@@ -684,6 +687,10 @@ def get_wall_bp(obj):
 
 def get_product_class_name(class_name):
     name = class_name.replace("PRODUCT_","")
+    return name.replace("_"," ")
+
+def get_insert_class_name(class_name):
+    name = class_name.replace("INSERT_","")
     return name.replace("_"," ")
 
 def set_wireframe(obj,make_wire=True):
@@ -1603,8 +1610,10 @@ def draw_opengl(self,context):
 
 def draw_dimensions(context, obj, opengl_dim, region, rv3d):
     scene_ogl_dim_props = bpy.context.scene.mv.opengl_dim
+    
     pr = scene_ogl_dim_props.gl_precision
     fmt = "%1." + str(pr) + "f"
+    
     units = scene_ogl_dim_props.gl_dim_units
     fsize = scene_ogl_dim_props.gl_font_size    
     a_size = scene_ogl_dim_props.gl_arrow_size
@@ -1729,83 +1738,81 @@ def draw_text(x_pos, y_pos, display_text, rgb, fsize):
     return maxwidth, maxheight
 
 def format_distance(fmt, units, value, factor=1):
-    s_code = "\u00b2"  # Superscript two
+    scene_ogl_dim_props = bpy.context.scene.mv.opengl_dim
+    getcontext().rounding = ROUND_HALF_UP
+    rd_fac = Decimal(str(scene_ogl_dim_props.gl_imperial_rd_factor))
+    
+    s_code = "\u00bd"  # Superscript two
+    
+    #Unicode fraction char codes
+    #1/2 "\u00bd"
+    #1/4 "\u00bc"
+    #1/8 "\u0d77"
+    #1/16 "\u0d76"
+    print(fmt)
+    print(fmt % value)
+    
     #---------- Units automatic
-    if units == "1":
-        # Units
+    if units == "AUTO":
+
         if bpy.context.scene.unit_settings.system == "IMPERIAL":
-            feet = value * (3.2808399 ** factor)
+            feet = value * 3.2808399
+            
             if round(feet, 2) >= 1.0:
                 fmt += "'"
-                if factor == 2:
-                    fmt += s_code
                 tx_dist = fmt % feet
+                
             else:
-                inches = value * (39.3700787 ** factor)
+                inches = value * 39.3700787
                 fmt += '"'
-                if factor == 2:
-                    fmt += s_code
                 tx_dist = fmt % inches
+                
         elif bpy.context.scene.unit_settings.system == "METRIC":
             if round(value, 2) >= 1.0:
                 fmt += " m"
-                if factor == 2:
-                    fmt += s_code
                 tx_dist = fmt % value
             else:
                 if round(value, 2) >= 0.01:
                     fmt += " cm"
-                    if factor == 2:
-                        fmt += s_code
-                    d_cm = value * (100 ** factor)
+                    d_cm = value * 100
                     tx_dist = fmt % d_cm
                 else:
                     fmt += " mm"
-                    if factor == 2:
-                        fmt += s_code
-                    d_mm = value * (1000 ** factor)
+                    d_mm = value * 1000
                     tx_dist = fmt % d_mm
         else:
             tx_dist = fmt % value
 
     #---------- Units meters
-    elif units == "2":
+    elif units == "METER":
         fmt += " m"
-        if factor == 2:
-            fmt += s_code
         tx_dist = fmt % value
 
     #---------- Units centimeters
-    elif units == "3":
+    elif units == "CENTIMETER":
         fmt += " cm"
-        if factor == 2:
-            fmt += s_code
-        d_cm = value * (100 ** factor)
+        d_cm = value * (100)
         tx_dist = fmt % d_cm
 
     #---------- Units millimeters
-    elif units == "4":
+    elif units == "MILIMETER":
         fmt += " mm"
-        if factor == 2:
-            fmt += s_code
-        d_mm = value * (1000 ** factor)
+        d_mm = value * (1000)
         tx_dist = fmt % d_mm
 
     #---------- Units feet
-    elif units == "5":
+    elif units == "FEET":
         fmt += "'"
-        if factor == 2:
-            fmt += s_code
-        feet = value * (3.2808399 ** factor)
+        feet = value * (3.2808399)
         tx_dist = fmt % feet
 
     #---------- Units inches
-    elif units == "6":
+    elif units == "INCH":
         fmt += '"'
-        if factor == 2:
-            fmt += s_code
-        inches = value * (39.3700787 ** factor)
-        tx_dist = fmt % inches
+        inches = value * 39.3700787
+        dec_inches = Decimal(str(inches))
+        rd_dec_inches = math.ceil(dec_inches * rd_fac)/rd_fac
+        tx_dist = str(rd_dec_inches) + '"'
         
     #--------------- Default
     else:

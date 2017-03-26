@@ -1396,6 +1396,8 @@ class OPS_load_library_modules(Operator):
                             
                     if inspect.isclass(obj) and "INSERT_" in name:
                         insert = obj()
+                        if insert.assembly_name == "":
+                            insert.assembly_name = name.replace("INSERT_","").replace("_"," ")
                         path = os.path.join(os.path.dirname(pkg.__file__),"inserts",insert.library_name)
                         lib = self.get_library(wm.lib_inserts,insert.library_name,mod_name,package,path)
                         item = lib.items.add()
@@ -1485,7 +1487,10 @@ class OPS_brd_library_items(Operator):
         if event.type == 'TIMER':
             if progress.current_item + 1 <= len(self.item_list):
                 if self.operation_type == 'RENDER':
-                    self.render_thumbnail(self.item_list[progress.current_item].class_name)
+                    if self.library_type == 'INSERT':
+                        self.render_insert(self.item_list[progress.current_item].class_name)
+                    else:
+                        self.render_product(self.item_list[progress.current_item].class_name)
                 if self.operation_type == 'BUILD':
                     self.build_product(self.item_list[progress.current_item].class_name)
                 if self.operation_type == 'DRAW':
@@ -1498,7 +1503,7 @@ class OPS_brd_library_items(Operator):
                 return self.cancel(context)
         return {'PASS_THROUGH'}
     
-    def render_thumbnail(self,class_name):
+    def render_product(self,class_name):
         filepath = get_thumbnail_path()
         script = os.path.join(bpy.app.tempdir,'thumbnail.py')
         script_file = open(script,'w')
@@ -1512,6 +1517,25 @@ class OPS_brd_library_items(Operator):
         script_file.write("item.draw()\n")
         script_file.write("item.update()\n")
         script_file.write("file_name = item.assembly_name if item.assembly_name != '' else utils.get_product_class_name('" + class_name + "')\n")
+        script_file.write("tn_path = os.path.join(r'" + self.library_path + "',item.category_name,file_name)\n")
+        script_file.write('utils.render_assembly(item,tn_path)\n')
+        script_file.close()
+        subprocess.call(bpy.app.binary_path + ' "' + filepath + '" -b --python "' + script + '"')
+
+    def render_insert(self,class_name):
+        filepath = get_thumbnail_path()
+        script = os.path.join(bpy.app.tempdir,'thumbnail.py')
+        script_file = open(script,'w')
+        script_file.write("import bpy\n")
+        script_file.write("import os\n")
+        script_file.write("from mv import utils\n")
+        script_file.write("bpy.ops.fd_material.reload_spec_group_from_library_modules()\n")
+        script_file.write("from mv import utils\n")
+        script_file.write("pkg = __import__('" + self.package_name + "')\n")
+        script_file.write("item = eval('pkg." + self.module_name + "." + class_name + "()')" + "\n")
+        script_file.write("item.draw()\n")
+        script_file.write("item.update()\n")
+        script_file.write("file_name = item.assembly_name if item.assembly_name != '' else utils.get_insert_class_name('" + class_name + "')\n")
         script_file.write("tn_path = os.path.join(r'" + self.library_path + "',item.category_name,file_name)\n")
         script_file.write('utils.render_assembly(item,tn_path)\n')
         script_file.close()
@@ -1844,8 +1868,18 @@ class OPS_dimension_interface(Operator):
         row.label("Color:")        
         row.prop(scene.mv.opengl_dim, 'gl_default_color', text="")        
         row = box.row()
-        row.label("Precision:")
-        row.prop(scene.mv.opengl_dim, 'gl_precision',text="")
+        
+        if scene.mv.opengl_dim.gl_dim_units in ('INCH', 'FEET'):
+            row.label("Round to the nearest:")
+            row.prop(scene.mv.opengl_dim, 'gl_imperial_rd_factor', text="")
+            row = box.row()
+            row.label("Number format:")
+            row.prop(scene.mv.opengl_dim, 'gl_number_format', text="")
+            
+        else:         
+            row.label("Precision:")
+            row.prop(scene.mv.opengl_dim, 'gl_precision',text="")
+        
         row = box.row()
         row.label("Text Size:")
         row.prop(scene.mv.opengl_dim, 'gl_font_size',text="")
